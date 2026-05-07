@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>通知助手</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="panel">
+      <!-- 标题栏 -->
+      <div class="panel-header" data-tauri-drag-region>
+        <div class="panel-title">
+          <div class="bell-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          通知助手
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" id="btn-pin" title="固定">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
+          </button>
+          <button class="header-btn" id="btn-settings" title="设置">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="header-btn" id="btn-minimize" title="最小化">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <button class="header-btn close-btn" id="btn-close" title="关闭">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 标签栏 -->
+      <div class="tabs">
+        <div class="tab active" data-tab="all">
+          <span>全部</span>
+          <span class="tab-badge badge-blue">12</span>
+        </div>
+        <div class="tab" data-tab="important">
+          <span>重要</span>
+          <span class="tab-badge badge-red">5</span>
+        </div>
+        <div class="tab" data-tab="messages">消息</div>
+        <div class="tab" data-tab="codes">验证码</div>
+        <div class="tab" data-tab="system">系统</div>
+        <div class="tab tab-ignored" data-tab="ignored">已忽略</div>
+      </div>
+
+      <!-- 通知列表 -->
+      <div class="notif-list" id="notif-list">
+
+        <!-- 微信·张经理 -->
+        <div class="notif-item unread" data-category="messages important">
+          <div class="app-icon icon-wechat">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8.5 11.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M2 8c0-2.8 2.9-5 6.5-5 3.4 0 6.2 2 6.5 4.6C21.5 7.9 24 10.2 24 13c0 1.6-.8 3-2.1 4l.6 2-2.3-1.2c-.6.2-1.4.3-2.2.3-3.2 0-5.8-1.9-6.3-4.4C11.2 13.9 10 14 8.5 14 4.9 14 2 11.3 2 8z"/></svg>
+          </div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <span class="notif-app">微信 · 张经理</span>
+              <span class="notif-time">14:28</span>
+            </div>
+            <div class="notif-text">新项目的需求文档发你了，晚上开个会讨论下</div>
+          </div>
+          <div class="notif-right">
+            <button class="action-btn">回复</button>
+            <button class="action-btn">打开 <span class="chevron">›</span></button>
+          </div>
+        </div>
+
+        <!-- 支付宝·验证码 -->
+        <div class="notif-item" data-category="codes important">
+          <div class="app-icon icon-alipay">支</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <span class="notif-app">支付宝 · 验证码</span>
+              <span class="notif-time">14:26</span>
+            </div>
+            <div class="notif-text">验证码 392811，5分钟内有效，请勿泄露</div>
+          </div>
+          <div class="notif-right">
+            <button class="action-btn copy-btn" data-code="392811">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              复制 <span class="chevron">›</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 淘宝·物流 -->
+        <div class="notif-item" data-category="system">
+          <div class="app-icon icon-taobao">淘</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <span class="notif-app">淘宝 · 物流消息</span>
+              <span class="notif-time">14:20</span>
+            </div>
+            <div class="notif-text">您的快件已到达【杭州转运中心】</div>
+          </div>
+          <div class="notif-right">
+            <button class="action-btn">打开 <span class="chevron">›</span></button>
+          </div>
+        </div>
+
+        <!-- 微信·文件传输 -->
+        <div class="notif-item" data-category="messages">
+          <div class="app-icon icon-wechat">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8.5 11.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M2 8c0-2.8 2.9-5 6.5-5 3.4 0 6.2 2 6.5 4.6C21.5 7.9 24 10.2 24 13c0 1.6-.8 3-2.1 4l.6 2-2.3-1.2c-.6.2-1.4.3-2.2.3-3.2 0-5.8-1.9-6.3-4.4C11.2 13.9 10 14 8.5 14 4.9 14 2 11.3 2 8z"/></svg>
+          </div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <span class="notif-app">微信 · 文件传输助手</span>
+              <span class="notif-time">14:18</span>
+            </div>
+            <div class="notif-text">[图片] Screenshot_2025-05-07.png</div>
+          </div>
+          <div class="notif-right">
+            <div class="notif-thumb">
+              <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" fill="#2a3a5c"/>
+                <circle cx="24" cy="20" r="9" fill="#3b6bb5" opacity="0.5"/>
+                <rect x="6" y="32" width="36" height="2" rx="1" fill="#3b6bb5" opacity="0.35"/>
+              </svg>
+            </div>
+            <button class="action-btn">打开文件</button>
+          </div>
+        </div>
+
+        <!-- 日历·会议 -->
+        <div class="notif-item" data-category="important system">
+          <div class="app-icon icon-calendar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <span class="notif-app">日历 · 会议提醒</span>
+              <span class="notif-time">14:15</span>
+            </div>
+            <div class="notif-text-multi">
+              <div>15:00 团队会议</div>
+              <div class="notif-subtext">会议室：腾讯会议 623 456 789</div>
+            </div>
+          </div>
+          <div class="notif-right" style="align-self: center;">
+            <button class="action-btn">查看</button>
+            <button class="action-btn">稍后 <span class="chevron">›</span></button>
+          </div>
+        </div>
+
+        <!-- 哔哩哔哩 (静音) -->
+        <div class="notif-item muted" data-category="system">
+          <div class="app-icon icon-bilibili">哔哩</div>
+          <div class="notif-body">
+            <div class="notif-top">
+              <span class="notif-app">哔哩哔哩</span>
+              <span class="notif-time">14:10</span>
+            </div>
+            <div class="notif-text">你的关注UP主更新了视频</div>
+          </div>
+          <div class="notif-right">
+            <svg class="muted-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 已忽略折叠行 -->
+      <div class="ignored-row" id="ignored-row">
+        <span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px;"><polyline points="6 9 12 15 18 9"/></svg>
+          已忽略 6 条通知
+        </span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+
+    <script src="main.js" ></script>
+  </body>
+</html>
