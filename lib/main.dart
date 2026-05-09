@@ -13,6 +13,8 @@ Future<void> main(List<String> args) async {
   final currentWindow = await WindowController.fromCurrentEngine();
   final type = _windowType(currentWindow.arguments);
   if (type == 'preview') {
+    await windowManager.ensureInitialized();
+    await currentWindow.setWindowMethodHandler(PreviewCommandBridge.handle);
     runApp(PreviewWindowApp(windowController: currentWindow));
     return;
   }

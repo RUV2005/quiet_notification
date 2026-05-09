@@ -43,27 +43,62 @@ class PreviewWindowController {
     });
 
     _previewWindow = await _findOrCreatePreviewWindow();
+    await _waitUntilPreviewInvokerReady(_previewWindow!);
+  }
+
+  /// 子窗口 Dart 启动后需先 `setWindowMethodHandler`，否则主窗口 `invokeMethod` 会 CHANNEL_UNREGISTERED。
+  Future<void> _waitUntilPreviewInvokerReady(WindowController window) async {
+    const step = Duration(milliseconds: 40);
+    const maxWait = Duration(seconds: 12);
+    final deadline = DateTime.now().add(maxWait);
+    while (DateTime.now().isBefore(deadline)) {
+      try {
+        final ok = await window.invokeMethod<dynamic>('__ready_ack__');
+        if (ok == true) return;
+      } catch (_) {}
+      await Future<void>.delayed(step);
+    }
   }
 
   Future<void> dispose() async {
     await _actionChannel.setMethodCallHandler(null);
   }
 
-  Future<void> showNotification(AppNotification notification) async {
-    final window = _previewWindow ?? await _findOrCreatePreviewWindow();
-    _previewWindow = window;
+  /// 是否成功让子窗口展示预览（失败时调用方可回退到恢复主窗口等）。
+  Future<bool> showNotification(AppNotification notification) async {
+    try {
+      var window = _previewWindow ?? await _findOrCreatePreviewWindow();
+      _previewWindow = window;
 
-    await _invokePreviewWindowMethodWithRetry(window, 'show_preview', <String, dynamic>{
-      'notification': notification.toJson(),
-    });
-    await window.show();
+      var ok = await _invokePreviewWindowMethodWithRetry(
+        window,
+        'show_preview',
+        <String, dynamic>{'notification': notification.toJson()},
+      );
+      if (!ok) {
+        _previewWindow = null;
+        window = await _findOrCreatePreviewWindow();
+        _previewWindow = window;
+        ok = await _invokePreviewWindowMethodWithRetry(
+          window,
+          'show_preview',
+          <String, dynamic>{'notification': notification.toJson()},
+        );
+      }
+      if (!ok) return false;
+      await window.show();
+      return true;
+    } catch (_) {
+      _previewWindow = null;
+      return false;
+    }
   }
 
   Future<void> hidePreview() async {
     final window = _previewWindow;
     if (window == null) return;
-    await _invokePreviewWindowMethodWithRetry(window, 'hide_preview');
-    await window.hide();
+    final ok = await _invokePreviewWindowMethodWithRetry(window, 'hide_preview');
+    if (ok) await window.hide();
   }
 
   Future<WindowController> _findOrCreatePreviewWindow() async {
@@ -94,20 +129,21 @@ class PreviewWindowController {
     return null;
   }
 
-  Future<void> _invokePreviewWindowMethodWithRetry(
+  Future<bool> _invokePreviewWindowMethodWithRetry(
     WindowController window,
     String method, [
     dynamic arguments,
   ]) async {
-    const maxAttempts = 12;
+    const maxAttempts = 25;
     for (var i = 0; i < maxAttempts; i++) {
       try {
         await window.invokeMethod(method, arguments);
-        return;
+        return true;
       } catch (_) {
-        if (i == maxAttempts - 1) rethrow;
+        if (i == maxAttempts - 1) return false;
         await Future<void>.delayed(const Duration(milliseconds: 120));
       }
     }
+    return false;
   }
 }

@@ -1,9 +1,12 @@
 #include "flutter_window.h"
 
 #include <optional>
+#include <string>
+#include <windows.h>
 
 #include "flutter/generated_plugin_registrant.h"
 #include "desktop_multi_window/desktop_multi_window_plugin.h"
+#include "notification_native_popup.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -43,10 +46,55 @@ bool FlutterWindow::OnCreate() {
   // window is shown. It is a no-op if the first frame hasn't completed yet.
   flutter_controller_->ForceRedraw();
 
+  native_float_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(),
+          "quick_notification/native_float",
+          &flutter::StandardMethodCodec::GetInstance());
+  native_float_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name() == "show") {
+          const auto* map =
+              std::get_if<flutter::EncodableMap>(call.arguments());
+          auto read_str = [map](const char* key) -> std::string {
+            if (!map) {
+              return {};
+            }
+            auto it = map->find(flutter::EncodableValue(key));
+            if (it == map->end()) {
+              return {};
+            }
+            const auto* s = std::get_if<std::string>(&it->second);
+            return s ? *s : std::string{};
+          };
+          HWND flutter_child = flutter_controller_->view()->GetNativeWindow();
+          HWND root =
+              flutter_child ? GetAncestor(flutter_child, GA_ROOT) : nullptr;
+          std::string header = read_str("header_title");
+          if (header.empty()) {
+            header = read_str("title");
+          }
+          NotificationNativePopupShow(
+              root, header, read_str("time"), read_str("code"),
+              read_str("code_label"), read_str("subtitle"),
+              read_str("from_label"), read_str("copy_payload"));
+          result->Success();
+        } else if (call.method_name() == "hide") {
+          NotificationNativePopupClose();
+          result->Success();
+        } else {
+          result->NotImplemented();
+        }
+      });
+
   return true;
 }
 
 void FlutterWindow::OnDestroy() {
+  NotificationNativePopupClose();
+  native_float_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
