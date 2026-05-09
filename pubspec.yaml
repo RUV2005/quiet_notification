@@ -1,0 +1,26 @@
+name: quick_notification
+description: 桌面通知助手（Flutter）
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  desktop_multi_window: ^0.3.0
+  flutter:
+    sdk: flutter
+  flutter_svg: ^2.2.4
+  screen_retriever: ^0.2.0
+  web_socket_channel: ^3.0.1
+  window_manager: ^0.4.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.2
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/assets/

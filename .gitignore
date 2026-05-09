@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+coverage/
+pubspec.lock
+
+# Keep local IDE metadata out of VCS
+.metadata
+quick_notification.iml
+
+# Legacy Electron runtime artifacts
+electron-cache/
+
+# Python
+__pycache__/
+*.pyc
