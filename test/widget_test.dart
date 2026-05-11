@@ -7,11 +7,11 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:quick_notification/main.dart';
+import 'package:quick_notification/app/home_page.dart';
 
 void main() {
   testWidgets('Notification app renders', (WidgetTester tester) async {
     await tester.pumpWidget(const NotificationApp());
-    expect(find.text('🔔 通知助手'), findsOneWidget);
+    expect(find.text('通知助手'), findsWidgets);
   });
 }

@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
-
 /// 顶部筛选标签页。
-enum NotificationTab { all, important, messages, codes, system, ignored }
+enum NotificationTab { all, important, messages, codes, system, read, ignored }
 
 /// 标题栏关闭按钮行为。
 enum WindowAction { hide, close }
@@ -17,6 +15,7 @@ class AppNotification {
     required this.unread,
     required this.categories,
     this.code,
+    this.repeatCount = 1,
   });
 
   final String id;
@@ -27,6 +26,8 @@ class AppNotification {
   final bool unread;
   final List<String> categories;
   final String? code;
+  /// 去重合并后的重复次数（同应用同标题短时间内的条数）。
+  final int repeatCount;
 
   String get appShort => String.fromCharCodes(app.runes.take(2));
 
@@ -40,6 +41,7 @@ class AppNotification {
     bool? unread,
     List<String>? categories,
     String? code,
+    int? repeatCount,
   }) {
     return AppNotification(
       id: id ?? this.id,
@@ -50,6 +52,7 @@ class AppNotification {
       unread: unread ?? this.unread,
       categories: categories ?? List<String>.from(this.categories),
       code: code ?? this.code,
+      repeatCount: repeatCount ?? this.repeatCount,
     );
   }
 
@@ -80,6 +83,7 @@ class AppNotification {
       'unread': unread,
       'categories': categories,
       'code': code,
+      'repeatCount': repeatCount,
     };
   }
 
@@ -88,6 +92,7 @@ class AppNotification {
     final categories = categoriesRaw is List
         ? categoriesRaw.map((e) => e.toString()).toList()
         : <String>[];
+    final rc = raw['repeatCount'];
     return AppNotification(
       id: (raw['id'] ?? '').toString(),
       app: (raw['app'] ?? '未知应用').toString(),
@@ -97,6 +102,7 @@ class AppNotification {
       unread: raw['unread'] != false,
       categories: categories,
       code: raw['code']?.toString(),
+      repeatCount: rc is num ? rc.toInt() : 1,
     );
   }
 }

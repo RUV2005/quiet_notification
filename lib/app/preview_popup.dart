@@ -60,7 +60,7 @@ class MinimizedPreviewCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                notification.time,
+                formatFriendlyTime(notification.time),
                 style: const TextStyle(color: Colors.white54, fontSize: 11),
               ),
               IconButton(

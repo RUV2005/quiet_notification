@@ -29,6 +29,80 @@ String? resolveAppIconAsset(String appName) {
   return null;
 }
 
+const List<Color> _kAvatarPalette = <Color>[
+  Color(0xFF3B82F6),
+  Color(0xFF8B5CF6),
+  Color(0xFF06B6D4),
+  Color(0xFF10B981),
+  Color(0xFFF59E0B),
+  Color(0xFFEF4444),
+  Color(0xFFEC4899),
+  Color(0xFF6366F1),
+];
+
+Color avatarColorForApp(String appName) {
+  final key = appName.trim().toLowerCase();
+  final hash = key.runes.fold<int>(0, (acc, r) => (acc * 131 + r) & 0x7fffffff);
+  return _kAvatarPalette[hash % _kAvatarPalette.length];
+}
+
+DateTime? parseNotificationTime(String raw) {
+  final text = raw.trim();
+  if (text.isEmpty) return null;
+  var dt = DateTime.tryParse(text);
+  if (dt != null) return dt;
+  dt = DateTime.tryParse(text.replaceFirst(' ', 'T'));
+  if (dt != null) return dt;
+
+  final hm = RegExp(r'^(\d{1,2}):(\d{2})(?::(\d{2}))?$').firstMatch(text);
+  if (hm != null) {
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      int.parse(hm.group(1)!),
+      int.parse(hm.group(2)!),
+      int.tryParse(hm.group(3) ?? '0') ?? 0,
+    );
+  }
+  return null;
+}
+
+String _two(int v) => v.toString().padLeft(2, '0');
+
+String formatFriendlyTime(String raw) {
+  final dt = parseNotificationTime(raw);
+  if (dt == null) return raw;
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(dt.year, dt.month, dt.day);
+  final days = today.difference(day).inDays;
+  final hm = '${_two(dt.hour)}:${_two(dt.minute)}';
+  if (days == 0) return hm;
+  if (days == 1) return '昨天 $hm';
+  return '${dt.year}-${_two(dt.month)}-${_two(dt.day)} $hm';
+}
+
+/// 隐私模式 / 敏感应用：列表与预览中展示的正文（不含标题行）。
+String notificationBodyForDisplay(
+  String app,
+  String content, {
+  required bool privacyHideContent,
+  List<String> sensitiveAppHints = const [],
+}) {
+  if (privacyHideContent) return '（内容已隐藏）';
+  final appL = app.toLowerCase();
+  for (final h in sensitiveAppHints) {
+    final t = h.trim();
+    if (t.isEmpty) continue;
+    if (appL.contains(t.toLowerCase())) {
+      return '（敏感应用：内容已隐藏）';
+    }
+  }
+  return content;
+}
+
 /// 构建通知中的应用头像：优先图标，失败时回退到应用简称文字。
 Widget buildAppAvatar({
   required String appName,
@@ -42,7 +116,7 @@ Widget buildAppAvatar({
     height: size,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: Colors.blue,
+      color: avatarColorForApp(appName),
       borderRadius: BorderRadius.circular(kUnifiedRadius),
     ),
     child: iconAsset == null

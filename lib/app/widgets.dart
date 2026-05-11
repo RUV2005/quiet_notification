@@ -256,6 +256,7 @@ class NotificationTabsBar extends StatelessWidget {
     NotificationTab.messages: '消息',
     NotificationTab.codes: '验证码',
     NotificationTab.system: '系统',
+    NotificationTab.read: '已读',
     NotificationTab.ignored: '已忽略',
   };
 
@@ -336,6 +337,13 @@ class NotificationCardView extends StatelessWidget {
     this.onCopy,
     this.onIgnore,
     this.onUnignore,
+    this.privacyHideContent = false,
+    this.sensitiveAppHints = const [],
+    this.onMarkRead,
+    this.onCopyAll,
+    this.onAddIgnoreAppRule,
+    this.onAddIgnoreTitleKeywordRule,
+    this.onOpenAppHint,
   });
 
   final AppNotification n;
@@ -344,9 +352,30 @@ class NotificationCardView extends StatelessWidget {
   final VoidCallback? onCopy;
   final VoidCallback? onIgnore;
   final VoidCallback? onUnignore;
+  final bool privacyHideContent;
+  final List<String> sensitiveAppHints;
+  final VoidCallback? onMarkRead;
+  final VoidCallback? onCopyAll;
+  final VoidCallback? onAddIgnoreAppRule;
+  final VoidCallback? onAddIgnoreTitleKeywordRule;
+  final VoidCallback? onOpenAppHint;
 
   @override
   Widget build(BuildContext context) {
+    final body = notificationBodyForDisplay(
+      n.app,
+      n.content,
+      privacyHideContent: privacyHideContent,
+      sensitiveAppHints: sensitiveAppHints,
+    );
+    final titleLine =
+        '${n.app} · ${n.title}${n.repeatCount > 1 ? ' （×${n.repeatCount}）' : ''}';
+    final hasMenu = onMarkRead != null ||
+        onCopyAll != null ||
+        onAddIgnoreAppRule != null ||
+        onAddIgnoreTitleKeywordRule != null ||
+        onOpenAppHint != null;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
@@ -388,7 +417,7 @@ class NotificationCardView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${n.app} · ${n.title}',
+                            titleLine,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -401,7 +430,7 @@ class NotificationCardView extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            n.content,
+                            body,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -421,11 +450,57 @@ class NotificationCardView extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          n.time,
+                          formatFriendlyTime(n.time),
                           style: const TextStyle(
                               color: Colors.white54, fontSize: 13),
                         ),
                         const SizedBox(height: 6),
+                        if (hasMenu && !isIgnoredTab)
+                          PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(Icons.more_horiz,
+                                color: Colors.white38, size: 20),
+                            onSelected: (v) {
+                              switch (v) {
+                                case 'read':
+                                  onMarkRead?.call();
+                                  break;
+                                case 'copy_all':
+                                  onCopyAll?.call();
+                                  break;
+                                case 'rule_app':
+                                  onAddIgnoreAppRule?.call();
+                                  break;
+                                case 'rule_title':
+                                  onAddIgnoreTitleKeywordRule?.call();
+                                  break;
+                                case 'open_app':
+                                  onOpenAppHint?.call();
+                                  break;
+                              }
+                            },
+                            itemBuilder: (ctx) => [
+                              if (onMarkRead != null)
+                                const PopupMenuItem(
+                                    value: 'read', child: Text('标为已读')),
+                              if (onCopyAll != null)
+                                const PopupMenuItem(
+                                    value: 'copy_all', child: Text('复制全部')),
+                              if (onAddIgnoreAppRule != null)
+                                const PopupMenuItem(
+                                    value: 'rule_app',
+                                    child: Text('规则：忽略此应用')),
+                              if (onAddIgnoreTitleKeywordRule != null)
+                                const PopupMenuItem(
+                                    value: 'rule_title',
+                                    child: Text('规则：忽略含标题关键字')),
+                              if (onOpenAppHint != null)
+                                const PopupMenuItem(
+                                    value: 'open_app',
+                                    child: Text('打开应用（提示）')),
+                            ],
+                          ),
+                        if (hasMenu && !isIgnoredTab) const SizedBox(height: 4),
                         // 操作按钮行
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -539,6 +614,11 @@ class AppGroupCard extends StatelessWidget {
     required this.expanded,
     required this.onToggle,
     required this.cardBuilder,
+    this.privacyHideContent = false,
+    this.sensitiveAppHints = const [],
+    this.showPinButton = false,
+    this.isPinned = false,
+    this.onTogglePin,
   });
 
   final String app;
@@ -546,11 +626,22 @@ class AppGroupCard extends StatelessWidget {
   final bool expanded;
   final VoidCallback onToggle;
   final Widget Function(AppNotification n) cardBuilder;
+  final bool privacyHideContent;
+  final List<String> sensitiveAppHints;
+  final bool showPinButton;
+  final bool isPinned;
+  final VoidCallback? onTogglePin;
 
   @override
   Widget build(BuildContext context) {
     final unreadCount = notifications.where((n) => n.unread).length;
     final latest = notifications.first;
+    final previewBody = notificationBodyForDisplay(
+      app,
+      latest.content,
+      privacyHideContent: privacyHideContent,
+      sensitiveAppHints: sensitiveAppHints,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -638,7 +729,7 @@ class AppGroupCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${latest.title} · ${latest.content}',
+                          latest.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -646,6 +737,19 @@ class AppGroupCard extends StatelessWidget {
                                 ? Colors.white70
                                 : Colors.white38,
                             fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          previewBody,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: unreadCount > 0
+                                ? Colors.white54
+                                : Colors.white30,
+                            fontSize: 13,
                           ),
                         ),
                       ],
@@ -655,8 +759,23 @@ class AppGroupCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      if (showPinButton && onTogglePin != null)
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                              minWidth: 32, minHeight: 32),
+                          tooltip: isPinned ? '取消置顶' : '置顶应用',
+                          onPressed: onTogglePin,
+                          icon: Icon(
+                            isPinned ? Icons.push_pin : Icons.star_border,
+                            size: 18,
+                            color: isPinned
+                                ? Colors.lightBlueAccent
+                                : Colors.white38,
+                          ),
+                        ),
                       Text(
-                        latest.time,
+                        formatFriendlyTime(latest.time),
                         style: const TextStyle(
                             color: Colors.white54, fontSize: 14),
                       ),

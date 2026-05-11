@@ -18,6 +18,9 @@ class AppNotificationListenerService : NotificationListenerService() {
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
         val content = if (!bigText.isNullOrBlank()) bigText else text
+        val isOngoing = sbn.isOngoing ||
+                (notification.flags and Notification.FLAG_ONGOING_EVENT) != 0 ||
+                (notification.flags and Notification.FLAG_FOREGROUND_SERVICE) != 0
 
         val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(sbn.postTime))
 
@@ -28,6 +31,7 @@ class AppNotificationListenerService : NotificationListenerService() {
             "content" to content,
             "time" to timeStr,
             "unread" to true,
+            "ongoing" to isOngoing,
         )
         NotificationListenerBridge.emit(payload)
     }

@@ -28,7 +28,21 @@ abstract final class NativeFloatPreviewWindows {
     return s;
   }
 
-  static Future<void> show(AppNotification n) async {
+  static bool _sensitiveApp(String app, List<String> hints) {
+    final a = app.toLowerCase();
+    for (final h in hints) {
+      final t = h.trim();
+      if (t.isEmpty) continue;
+      if (a.contains(t.toLowerCase())) return true;
+    }
+    return false;
+  }
+
+  static Future<void> show(
+    AppNotification n, {
+    bool privacyHideContent = false,
+    List<String> sensitiveAppHints = const [],
+  }) async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.windows) return;
     try {
       final payload = Map<String, dynamic>.from(n.toJson());
@@ -37,15 +51,21 @@ abstract final class NativeFloatPreviewWindows {
       payload['header_title'] = '${n.app} · ${n.title}';
 
       final hasCode = n.code != null && n.code!.trim().isNotEmpty;
-      final mainText = hasCode
-          ? n.code!.trim()
-          : (n.content.trim().isNotEmpty
-              ? n.content.trim()
-              : n.title.trim());
+      final hideBody =
+          privacyHideContent || _sensitiveApp(n.app, sensitiveAppHints);
+      final mainText = hideBody
+          ? (hasCode ? '（验证码已到达，内容已隐藏）' : '（内容已隐藏）')
+          : (hasCode
+              ? n.code!.trim()
+              : (n.content.trim().isNotEmpty
+                  ? n.content.trim()
+                  : n.title.trim()));
       payload['code'] = mainText;
-      payload['code_label'] = hasCode ? '验证码' : '';
+      payload['code_label'] = hasCode && !hideBody ? '验证码' : '';
 
-      if (hasCode) {
+      if (hideBody) {
+        payload['subtitle'] = '';
+      } else if (hasCode) {
         final c = n.content.trim();
         if (c.isNotEmpty && c != mainText && !c.contains(mainText)) {
           payload['subtitle'] = n.content;
@@ -57,9 +77,11 @@ abstract final class NativeFloatPreviewWindows {
       }
 
       payload['from_label'] = '来自：${n.app}';
-      payload['copy_payload'] = (n.code != null && n.code!.isNotEmpty)
-          ? n.code
-          : (n.content.isNotEmpty ? n.content : n.title);
+      payload['copy_payload'] = hideBody
+          ? ''
+          : ((n.code != null && n.code!.isNotEmpty)
+              ? n.code
+              : (n.content.isNotEmpty ? n.content : n.title));
       await _channel.invokeMethod<void>('show', payload);
     } catch (_) {}
   }
