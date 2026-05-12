@@ -15,6 +15,8 @@ import 'app_preferences.dart';
 import 'constants.dart';
 import 'models.dart';
 import 'native_float_preview_windows.dart';
+import 'onboarding_flow.dart';
+import 'onboarding_store.dart';
 import 'notification_rules.dart';
 import 'notification_store.dart';
 import 'preferences_store.dart';
@@ -255,6 +257,18 @@ class _NotificationHomePageState extends State<NotificationHomePage>
       });
     }
     unawaited(_refreshTray());
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_maybeShowFirstLaunchOnboarding());
+      });
+    }
+  }
+
+  Future<void> _maybeShowFirstLaunchOnboarding() async {
+    if (!mounted) return;
+    final done = await OnboardingStore.instance.isCompleted();
+    if (!mounted || done) return;
+    await presentOnboardingFlow(context, markCompletedWhenDone: true);
   }
 
   Future<void> _savePrefs() async {
@@ -689,14 +703,26 @@ class _NotificationHomePageState extends State<NotificationHomePage>
 
   AppNotification _fromJson(Map<String, dynamic> raw) {
     final now = DateTime.now();
-    final app = (raw['app'] ?? '未知应用').toString();
-    final title = (raw['title'] ?? '新通知').toString();
-    final content = (raw['content'] ?? '').toString();
+    final app = clampNotificationField(
+      (raw['app'] ?? '未知应用').toString(),
+      kNotificationAppMaxChars,
+    );
+    final title = clampNotificationField(
+      (raw['title'] ?? '新通知').toString(),
+      kNotificationTitleMaxChars,
+    );
+    final content = clampNotificationField(
+      (raw['content'] ?? '').toString(),
+      kNotificationContentMaxChars,
+    );
     final id = (raw['id'] ?? now.millisecondsSinceEpoch).toString();
     final time =
         (raw['time'] ?? '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}')
             .toString();
-    final code = (raw['code'] ?? '').toString();
+    final code = clampNotificationField(
+      (raw['code'] ?? '').toString(),
+      kNotificationCodeMaxChars,
+    );
 
     final categories = <String>{};
     final rawCats = raw['categories'];
@@ -1310,6 +1336,21 @@ class _NotificationHomePageState extends State<NotificationHomePage>
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.pop(dlgCtx);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        unawaited(presentOnboardingFlow(
+                          context,
+                          markCompletedWhenDone: true,
+                        ));
+                      }
+                    });
+                  },
+                  child: const Text('重新查看新手引导'),
+                ),
+                const SizedBox(height: 6),
                 OutlinedButton(
                   onPressed: () {
                     Navigator.pop(dlgCtx);

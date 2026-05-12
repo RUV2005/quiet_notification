@@ -10,6 +10,10 @@ import 'app/preview_window.dart';
 /// 程序入口：初始化窗口管理，并以桌面窗口方式启动 Flutter 应用。
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  // 本应用几乎无大图资源；收紧全局图片缓存以降低常驻内存（默认上限很大）。
+  PaintingBinding.instance.imageCache
+    ..maximumSize = 24
+    ..maximumSizeBytes = 12 << 20;
   final currentWindow = await WindowController.fromCurrentEngine();
   final type = _windowType(currentWindow.arguments);
   if (type == 'preview') {

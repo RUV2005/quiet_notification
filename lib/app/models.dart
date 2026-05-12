@@ -1,3 +1,20 @@
+/// 应用名单条上限（避免异常数据撑爆内存）。
+const int kNotificationAppMaxChars = 128;
+
+/// 标题单条上限。
+const int kNotificationTitleMaxChars = 512;
+
+/// 正文单条上限（本地 JSON 与堆内列表共用，避免超长推送占满内存）。
+const int kNotificationContentMaxChars = 8192;
+
+/// 验证码等短字段上限。
+const int kNotificationCodeMaxChars = 256;
+
+String clampNotificationField(String value, int maxChars) {
+  if (value.length <= maxChars) return value;
+  return value.substring(0, maxChars);
+}
+
 /// 顶部筛选标签页。
 enum NotificationTab { all, important, messages, codes, system, read, ignored }
 
@@ -93,15 +110,27 @@ class AppNotification {
         ? categoriesRaw.map((e) => e.toString()).toList()
         : <String>[];
     final rc = raw['repeatCount'];
+    final codeRaw = raw['code']?.toString();
     return AppNotification(
       id: (raw['id'] ?? '').toString(),
-      app: (raw['app'] ?? '未知应用').toString(),
-      title: (raw['title'] ?? '新通知').toString(),
-      content: (raw['content'] ?? '').toString(),
+      app: clampNotificationField(
+        (raw['app'] ?? '未知应用').toString(),
+        kNotificationAppMaxChars,
+      ),
+      title: clampNotificationField(
+        (raw['title'] ?? '新通知').toString(),
+        kNotificationTitleMaxChars,
+      ),
+      content: clampNotificationField(
+        (raw['content'] ?? '').toString(),
+        kNotificationContentMaxChars,
+      ),
       time: (raw['time'] ?? '').toString(),
       unread: raw['unread'] != false,
       categories: categories,
-      code: raw['code']?.toString(),
+      code: codeRaw == null || codeRaw.isEmpty
+          ? null
+          : clampNotificationField(codeRaw, kNotificationCodeMaxChars),
       repeatCount: rc is num ? rc.toInt() : 1,
     );
   }

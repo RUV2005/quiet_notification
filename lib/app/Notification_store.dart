@@ -14,7 +14,8 @@ class NotificationStore {
   static final NotificationStore instance = NotificationStore._();
 
   static const String _key = 'notifications_v1';
-  static const int maxCount = 200;
+  /// 列表与本地 JSON 条数上限；略降以减轻堆内存与解码开销（仍足够日常使用）。
+  static const int maxCount = 120;
 
   SharedPreferences? _prefs;
 
@@ -30,9 +31,13 @@ class NotificationStore {
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
-      return list
+      final out = list
           .map((e) => AppNotification.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
+      if (out.length > maxCount) {
+        return out.sublist(0, maxCount);
+      }
+      return out;
     } catch (_) {
       return [];
     }
